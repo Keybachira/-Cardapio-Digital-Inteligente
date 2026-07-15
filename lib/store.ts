@@ -1,8 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { PRATOS } from "./mock-data";
+import { imagemTestePrato, PRATOS } from "./mock-data";
 import { EstadoPedido, ItemCarrinho, Pedido, Prato } from "./types";
+import {
+  validarItensCarrinho,
+  validarMesaId,
+  validarNotas,
+  validarTransicaoEstado,
+} from "./validations";
 
 const KEY_PEDIDOS = "kianda:pedidos";
 const KEY_PRATOS = "kianda:pratos";
@@ -57,18 +63,25 @@ function useSyncedTopic(topic: string, onChange: () => void) {
 
 // ---------- Pratos (cardápio) ----------
 
+function normalizarImagemPrato(prato: Prato): Prato {
+  if (!prato.imagem || prato.imagem.startsWith("/mock-imgs/")) {
+    return { ...prato, imagem: imagemTestePrato(prato.id) };
+  }
+  return prato;
+}
+
 export function getPratos(): Prato[] {
-  return read<Prato[]>(KEY_PRATOS, PRATOS);
+  const guardados = read<Prato[]>(KEY_PRATOS, PRATOS);
+  const normalizados = guardados.map(normalizarImagemPrato);
+  const mudou = guardados.some((prato, index) => prato.imagem !== normalizados[index].imagem);
+  if (mudou) write(KEY_PRATOS, normalizados);
+  return normalizados;
 }
 
 export function useCardapio() {
-  const [pratos, setPratos] = useState<Prato[]>(PRATOS);
+  const [pratos, setPratos] = useState<Prato[]>(() => getPratos());
 
   const reload = useCallback(() => setPratos(getPratos()), []);
-
-  useEffect(() => {
-    reload();
-  }, [reload]);
 
   useSyncedTopic("kianda:pratos:changed", reload);
 
@@ -115,7 +128,10 @@ function gerarIdPedido() {
 }
 
 export function criarPedido(mesaId: string, itensCarrinho: ItemCarrinho[]): Pedido {
+  validarMesaId(mesaId);
   const cardapio = getPratos();
+  validarItensCarrinho(itensCarrinho, cardapio);
+
   const itens = itensCarrinho.map((ic) => {
     const prato = cardapio.find((p) => p.id === ic.pratoId)!;
     return {
@@ -123,7 +139,7 @@ export function criarPedido(mesaId: string, itensCarrinho: ItemCarrinho[]): Pedi
       nome: prato.nome,
       preco: prato.preco,
       quantidade: ic.quantidade,
-      notas: ic.notas,
+      notas: validarNotas(ic.notas),
     };
   });
   const total = itens.reduce((s, i) => s + i.preco * i.quantidade, 0);
@@ -144,11 +160,50 @@ export function criarPedido(mesaId: string, itensCarrinho: ItemCarrinho[]): Pedi
 
 export function atualizarEstadoPedido(id: string, estado: EstadoPedido) {
   const atuais = getPedidos();
+  const pedido = atuais.find((p) => p.id === id);
+  if (!pedido) {
+    console.warn(`Pedido "${id}" não encontrado.`);
+    return;
+  }
+  try {
+    validarTransicaoEstado(pedido.estado, estado);
+  } catch (e) {
+    console.warn(e instanceof Error ? e.message : "Transição inválida.");
+    return;
+  }
   const novos = atuais.map((p) =>
     p.id === id ? { ...p, estado, atualizadoEm: Date.now() } : p
   );
   write(KEY_PEDIDOS, novos);
   broadcast("kianda:pedidos:changed");
+}
+
+export function marcarMesaComoPaga(mesaId: string) {
+  const atuais = getPedidos();
+  const novos = atuais.map((p) =>
+    p.mesaId === mesaId && !p.pagoEm
+      ? { ...p, pagoEm: Date.now(), atualizadoEm: Date.now() }
+      : p
+  );
+  write(KEY_PEDIDOS, novos);
+  broadcast("kianda:pedidos:changed");
+}
+
+export function reabrirMesa(mesaId: string) {
+  const atuais = getPedidos();
+  const novos = atuais.map((p) =>
+    p.mesaId === mesaId && p.pagoEm
+      ? { ...p, pagoEm: undefined, atualizadoEm: Date.now() }
+      : p
+  );
+  write(KEY_PEDIDOS, novos);
+  broadcast("kianda:pedidos:changed");
+}
+
+export function mesaEstaPaga(mesaId: string): boolean {
+  const atuais = getPedidos().filter((p) => p.mesaId === mesaId);
+  if (atuais.length === 0) return false;
+  return atuais.every((p) => p.pagoEm);
 }
 
 export function limparPedidosMesa(mesaId: string) {
@@ -161,16 +216,15 @@ export function limparPedidosMesa(mesaId: string) {
 }
 
 export function usePedidos(mesaId?: string) {
-  const [pedidos, setPedidos] = useState<Pedido[]>([]);
+  const [pedidos, setPedidos] = useState<Pedido[]>(() => {
+    const todos = getPedidos().sort((a, b) => b.criadoEm - a.criadoEm);
+    return mesaId ? todos.filter((p) => p.mesaId === mesaId) : todos;
+  });
 
   const reload = useCallback(() => {
     const todos = getPedidos().sort((a, b) => b.criadoEm - a.criadoEm);
     setPedidos(mesaId ? todos.filter((p) => p.mesaId === mesaId) : todos);
   }, [mesaId]);
-
-  useEffect(() => {
-    reload();
-  }, [reload]);
 
   useSyncedTopic("kianda:pedidos:changed", reload);
 
@@ -188,13 +242,7 @@ export function getCarrinho(mesaId: string): ItemCarrinho[] {
 }
 
 export function useCarrinho(mesaId: string) {
-  const [itens, setItens] = useState<ItemCarrinho[]>([]);
-
-  const reload = useCallback(() => setItens(getCarrinho(mesaId)), [mesaId]);
-
-  useEffect(() => {
-    reload();
-  }, [reload]);
+  const [itens, setItens] = useState<ItemCarrinho[]>(() => getCarrinho(mesaId));
 
   const persist = useCallback(
     (novos: ItemCarrinho[]) => {
@@ -209,6 +257,7 @@ export function useCarrinho(mesaId: string) {
       const atuais = getCarrinho(mesaId);
       const idx = atuais.findIndex((i) => i.pratoId === pratoId);
       if (idx >= 0) {
+        if (atuais[idx].quantidade >= 20) return;
         const novos = [...atuais];
         novos[idx] = { ...novos[idx], quantidade: novos[idx].quantidade + 1 };
         persist(novos);
@@ -236,9 +285,67 @@ export function useCarrinho(mesaId: string) {
     [mesaId, persist]
   );
 
+  const atualizarNotas = useCallback(
+    (pratoId: string, notas: string) => {
+      const atuais = getCarrinho(mesaId);
+      const novos = atuais.map((i) =>
+        i.pratoId === pratoId ? { ...i, notas } : i
+      );
+      persist(novos);
+    },
+    [mesaId, persist]
+  );
+
   const limpar = useCallback(() => persist([]), [persist]);
 
-  return { itens, adicionar, remover, limpar };
+  return { itens, adicionar, remover, atualizarNotas, limpar };
+}
+
+// ---------- Garçom (chamadas) ----------
+
+const KEY_CHAMADAS = "kianda:chamadas";
+
+export type ChamadaGarcom = {
+  mesaId: string;
+  mesaNumero: number;
+  motivo: "atencao" | "conta" | "ajuda";
+  criadoEm: number;
+};
+
+export function getChamadas(): ChamadaGarcom[] {
+  return read<ChamadaGarcom[]>(KEY_CHAMADAS, []);
+}
+
+export function chamarGarcom(
+  mesaId: string,
+  mesaNumero: number,
+  motivo: ChamadaGarcom["motivo"]
+) {
+  const atuais = getChamadas();
+  // avoid duplicates within last 2 minutes
+  const recente = atuais.some(
+    (c) => c.mesaId === mesaId && Date.now() - c.criadoEm < 120_000
+  );
+  if (recente) return;
+  const nova: ChamadaGarcom = { mesaId, mesaNumero, motivo, criadoEm: Date.now() };
+  write(KEY_CHAMADAS, [...atuais, nova]);
+  broadcast("kianda:chamadas:changed");
+}
+
+export function removerChamada(mesaId: string) {
+  const atuais = getChamadas();
+  write(KEY_CHAMADAS, atuais.filter((c) => c.mesaId !== mesaId));
+  broadcast("kianda:chamadas:changed");
+}
+
+export function useChamadas() {
+  const [chamadas, setChamadas] = useState<ChamadaGarcom[]>(() => getChamadas());
+
+  const reload = useCallback(() => setChamadas(getChamadas()), []);
+
+  useSyncedTopic("kianda:chamadas:changed", reload);
+
+  return chamadas.sort((a, b) => b.criadoEm - a.criadoEm);
 }
 
 export function formatoKz(valor: number) {

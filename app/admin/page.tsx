@@ -3,16 +3,24 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { RESTAURANTE } from "@/lib/mock-data";
+import { login } from "@/lib/auth";
 import { Lock } from "lucide-react";
 
 export default function AdminLoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("gerencia@kianda.ao");
   const [senha, setSenha] = useState("");
+  const [erro, setErro] = useState("");
 
   function entrar(e: React.FormEvent) {
     e.preventDefault();
-    router.push("/admin/pedidos");
+    setErro("");
+    const resultado = login(email, senha);
+    if (resultado.sucesso) {
+      router.push("/admin/pedidos");
+    } else {
+      setErro(resultado.erro ?? "Erro ao autenticar.");
+    }
   }
 
   return (
@@ -56,6 +64,10 @@ export default function AdminLoginPage() {
           className="w-full rounded-lg bg-[var(--ink)] border border-[var(--line-strong)] px-3.5 py-2.5 text-sm text-[var(--bone)] mb-6 outline-none focus:border-[var(--ember)]"
         />
 
+        {erro && (
+          <p className="text-red-400 text-xs mb-4 font-mono text-center">{erro}</p>
+        )}
+
         <button
           type="submit"
           className="w-full rounded-full bg-[var(--ember)] text-[var(--ink)] font-semibold py-3 text-sm hover:bg-[var(--ember-2)] transition-colors"
@@ -63,7 +75,7 @@ export default function AdminLoginPage() {
           Entrar
         </button>
         <p className="text-center text-[var(--bone-dim)] text-[11px] mt-4 font-mono">
-          Protótipo — qualquer credencial entra
+          Protótipo — demo: gerencia@kianda.ao / kianda2024
         </p>
       </form>
     </main>

@@ -3,14 +3,32 @@ import { Categoria, Mesa, Prato } from "./types";
 export const RESTAURANTE = {
   nome: "Kianda",
   subnome: "Grelha & Mar",
-  tagline: "Da brasa à maré.",
+  tagline: "Sabores de Angola com uma experi\u00eancia \u00fanica",
   cidade: "Benguela",
   cor: "#0F2A3A",
+  coverImage: "/Mock-imge/images1.jpg",
+  rating: 4.7,
+  horario: "12:00 - 23:00 \u00b7 Sex-Dom at\u00e9 01:00",
+  localizacao: "Praia Morena, Benguela",
 };
+
+const TEST_IMAGES = [
+  "/Mock-imge/images1.jpg",
+  "/Mock-imge/images2.jpg",
+  "/Mock-imge/images3.jpg",
+  "/Mock-imge/images4.jpg",
+];
+
+export const imagemTestePrato = (id: string) => {
+  const numero = Number(id.replace(/\D/g, "")) || 1;
+  return TEST_IMAGES[(numero - 1) % TEST_IMAGES.length];
+};
+
+const IMG = imagemTestePrato;
 
 export const CATEGORIAS: { id: Categoria; nome: string; descricao: string }[] = [
   { id: "entradas", nome: "Entradas", descricao: "Para abrir o apetite" },
-  { id: "brasa", nome: "Da Brasa", descricao: "Grelhados no carvão" },
+  { id: "brasa", nome: "Da Brasa", descricao: "Grelhados no carv\u00e3o" },
   { id: "mar", nome: "Do Mar", descricao: "Pescado do dia" },
   { id: "acompanhamentos", nome: "Acompanhamentos", descricao: "" },
   { id: "sobremesas", nome: "Sobremesas", descricao: "" },
@@ -25,21 +43,27 @@ export const MESAS: Mesa[] = Array.from({ length: 12 }, (_, i) => ({
 export const PRATOS: Prato[] = [
   {
     id: "p1",
-    nome: "Camarão à Kianda",
-    descricao: "Camarão tigre grelhado em manteiga de alho e piri-piri da casa",
+    nome: "Camar\u00e3o \u00e0 Kianda",
+    descricao: "Camar\u00e3o tigre grelhado em manteiga de alho e piri-piri da casa",
     preco: 18500,
     categoria: "entradas",
     disponivel: true,
     destaque: true,
     picante: true,
+    imagem: IMG("p1"),
+    variacoes: [
+      { nome: "Por\u00e7\u00e3o normal", preco: 0 },
+      { nome: "Por\u00e7\u00e3o grande", preco: 4500 },
+    ],
   },
   {
     id: "p2",
-    nome: "Rissóis de Calulu",
-    descricao: "Massa fina recheada com calulu de peixe desfiado, quiabo e dendém",
+    nome: "Riss\u00f3is de Calulu",
+    descricao: "Massa fina recheada com calulu de peixe desfiado, quiabo e dend\u00e9m",
     preco: 6500,
     categoria: "entradas",
     disponivel: true,
+    imagem: IMG("p2"),
   },
   {
     id: "p3",
@@ -48,40 +72,49 @@ export const PRATOS: Prato[] = [
     preco: 9800,
     categoria: "entradas",
     disponivel: true,
+    imagem: IMG("p3"),
   },
   {
     id: "p4",
     nome: "Cabrito na Brasa",
-    descricao: "Meia posta de cabrito marinado 24h, carvão de mangueira",
+    descricao: "Meia posta de cabrito marinado 24h, carv\u00e3o de mangueira",
     preco: 24500,
     categoria: "brasa",
     disponivel: true,
     destaque: true,
+    imagem: IMG("p4"),
+    variacoes: [
+      { nome: "Meia posta", preco: 0 },
+      { nome: "Posta inteira", preco: 12000 },
+    ],
   },
   {
     id: "p5",
     nome: "Espetada de Novilho",
-    descricao: "Cubos de novilho, pimentão e cebola, molho de alho torrado",
+    descricao: "Cubos de novilho, piment\u00e3o e cebola, molho de alho torrado",
     preco: 19900,
     categoria: "brasa",
     disponivel: true,
+    imagem: IMG("p5"),
   },
   {
     id: "p6",
     nome: "Frango na Brasa Piri-Piri",
-    descricao: "Meio frango do campo, piri-piri da casa, limão de Benguela",
+    descricao: "Meio frango do campo, piri-piri da casa, lim\u00e3o de Benguela",
     preco: 13500,
     categoria: "brasa",
     disponivel: true,
     picante: true,
+    imagem: IMG("p6"),
   },
   {
     id: "p7",
     nome: "Costela de Porco Fumada",
-    descricao: "8 horas na brasa lenta, glaceada em melaço de cana",
+    descricao: "8 horas na brasa lenta, glaceada em mela\u00e7o de cana",
     preco: 17800,
     categoria: "brasa",
     disponivel: false,
+    imagem: IMG("p7"),
   },
   {
     id: "p8",
@@ -91,15 +124,17 @@ export const PRATOS: Prato[] = [
     categoria: "mar",
     disponivel: true,
     destaque: true,
+    imagem: IMG("p8"),
   },
   {
     id: "p9",
     nome: "Calulu de Peixe Fresco",
-    descricao: "Peixe seco e fresco, quiabo, jindungo e óleo de palma, à moda antiga",
+    descricao: "Peixe seco e fresco, quiabo, jindungo e \u00f3leo de palma, \u00e0 moda antiga",
     preco: 16200,
     categoria: "mar",
     disponivel: true,
     picante: true,
+    imagem: IMG("p9"),
   },
   {
     id: "p10",
@@ -108,22 +143,25 @@ export const PRATOS: Prato[] = [
     preco: 32000,
     categoria: "mar",
     disponivel: true,
+    imagem: IMG("p10"),
   },
   {
     id: "p11",
-    nome: "Funge de Bombó",
+    nome: "Funge de Bomb\u00f3",
     descricao: "Tradicional, feito na hora",
     preco: 2800,
     categoria: "acompanhamentos",
     disponivel: true,
+    imagem: IMG("p11"),
   },
   {
     id: "p12",
-    nome: "Pirão de Peixe",
+    nome: "Pir\u00e3o de Peixe",
     descricao: "Cremoso, com caldo do dia",
     preco: 3200,
     categoria: "acompanhamentos",
     disponivel: true,
+    imagem: IMG("p12"),
   },
   {
     id: "p13",
@@ -132,6 +170,7 @@ export const PRATOS: Prato[] = [
     preco: 2500,
     categoria: "acompanhamentos",
     disponivel: true,
+    imagem: IMG("p13"),
   },
   {
     id: "p14",
@@ -140,15 +179,17 @@ export const PRATOS: Prato[] = [
     preco: 2200,
     categoria: "acompanhamentos",
     disponivel: true,
+    imagem: IMG("p14"),
   },
   {
     id: "p15",
     nome: "Cocada Amarela",
-    descricao: "Doce tradicional de coco e gema, receita da avó",
+    descricao: "Doce tradicional de coco e gema, receita da av\u00f3",
     preco: 4800,
     categoria: "sobremesas",
     disponivel: true,
     destaque: true,
+    imagem: IMG("p15"),
   },
   {
     id: "p16",
@@ -157,14 +198,16 @@ export const PRATOS: Prato[] = [
     preco: 3900,
     categoria: "sobremesas",
     disponivel: true,
+    imagem: IMG("p16"),
   },
   {
     id: "p17",
-    nome: "Mousse de Maracujá",
+    nome: "Mousse de Maracuj\u00e1",
     descricao: "",
     preco: 4500,
     categoria: "sobremesas",
     disponivel: true,
+    imagem: IMG("p17"),
   },
   {
     id: "p18",
@@ -173,6 +216,7 @@ export const PRATOS: Prato[] = [
     preco: 2500,
     categoria: "bebidas",
     disponivel: true,
+    imagem: IMG("p18"),
   },
   {
     id: "p19",
@@ -181,6 +225,7 @@ export const PRATOS: Prato[] = [
     preco: 2200,
     categoria: "bebidas",
     disponivel: true,
+    imagem: IMG("p19"),
   },
   {
     id: "p20",
@@ -189,13 +234,15 @@ export const PRATOS: Prato[] = [
     preco: 3800,
     categoria: "bebidas",
     disponivel: true,
+    imagem: IMG("p20"),
   },
   {
     id: "p21",
-    nome: "Água de Coco Natural",
+    nome: "\u00c1gua de Coco Natural",
     descricao: "",
     preco: 2000,
     categoria: "bebidas",
     disponivel: true,
+    imagem: IMG("p21"),
   },
 ];

@@ -6,6 +6,11 @@ export type Categoria =
   | "sobremesas"
   | "bebidas";
 
+export interface Variacao {
+  nome: string;
+  preco: number;
+}
+
 export interface Prato {
   id: string;
   nome: string;
@@ -15,6 +20,8 @@ export interface Prato {
   disponivel: boolean;
   destaque?: boolean; // escolha do chef
   picante?: boolean;
+  imagem?: string; // food photo URL
+  variacoes?: Variacao[]; // opções tipo tamanho, ponto, complementos
 }
 
 export interface Mesa {
@@ -23,6 +30,16 @@ export interface Mesa {
 }
 
 export type EstadoPedido = "novo" | "preparo" | "pronto" | "entregue";
+
+export const TRANSICOES_VALIDAS: Record<EstadoPedido, EstadoPedido[]> = {
+  novo: ["preparo"],
+  preparo: ["pronto"],
+  pronto: ["entregue"],
+  entregue: [],
+};
+
+export const MAX_QUANTIDADE = 20;
+export const MAX_NOTAS_LENGTH = 200;
 
 export interface ItemPedido {
   pratoId: string;
@@ -40,10 +57,18 @@ export interface Pedido {
   criadoEm: number;
   atualizadoEm: number;
   total: number;
+  pagoEm?: number; // timestamp when paid; absent / undefined means não pago
 }
 
 export interface ItemCarrinho {
   pratoId: string;
   quantidade: number;
   notas?: string;
+}
+
+export class ErroValidacao extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "ErroValidacao";
+  }
 }
